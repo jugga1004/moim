@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: moim-record
+    name: gujins
     runtime: node
     buildCommand: npm install && npm run build
     startCommand: npm run start
@@ -9,7 +9,7 @@ services:
         value: production
       - key: DATABASE_URL
         fromDatabase:
-          name: moim-record-db
+          name: gujins-db
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
@@ -27,5 +27,5 @@ services:
         sync: false
 
 databases:
-  - name: moim-record-db
+  - name: gujins-db
     plan: free
