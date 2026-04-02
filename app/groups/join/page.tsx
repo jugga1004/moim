@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 export default function JoinGroupPage() {
   const router = useRouter();
   const [name, setName] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -17,14 +18,14 @@ export default function JoinGroupPage() {
       const res = await fetch('/api/groups/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, displayName }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || '참여에 실패했습니다.');
         return;
       }
-      router.push(`/groups/${data.data.id}`);
+      window.location.href = `/groups/${data.data.id}`;
     } catch {
       setError('서버 오류가 발생했습니다.');
     } finally {
@@ -54,6 +55,17 @@ export default function JoinGroupPage() {
                 placeholder="모임 이름을 정확히 입력하세요"
                 required
                 autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">이 모임에서 사용할 내 이름</label>
+              <input
+                type="text"
+                value={displayName}
+                onChange={e => setDisplayName(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
+                placeholder="예: 홍길동, 길동이"
+                required
               />
             </div>
             {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">{error}</div>}

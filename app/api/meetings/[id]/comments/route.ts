@@ -8,8 +8,17 @@ export async function GET(request: NextRequest, { params }: Params) {
   const session = getSessionFromRequest(request);
   if (!session) return NextResponse.json({ error: '인증 필요' }, { status: 401 });
   const { id } = await params;
+
+  // 모임의 group_id를 가져와서 group_members의 display_name 사용
   const comments = await query(
-    'SELECT c.*, u.display_name as author_name FROM moim_comments c JOIN moim_users u ON c.author_id = u.id WHERE c.meeting_id = $1 AND c.is_deleted = 0 ORDER BY c.created_at ASC',
+    `SELECT c.*,
+       COALESCE(gm.display_name, u.display_name, u.username) as author_name
+     FROM moim_comments c
+     JOIN moim_users u ON c.author_id = u.id
+     LEFT JOIN moim_meetings m ON m.id = c.meeting_id
+     LEFT JOIN moim_group_members gm ON gm.group_id = m.group_id AND gm.user_id = c.author_id
+     WHERE c.meeting_id = $1 AND c.is_deleted = 0
+     ORDER BY c.created_at ASC`,
     [parseInt(id)]
   );
   return NextResponse.json({ data: comments });
@@ -27,8 +36,15 @@ export async function POST(request: NextRequest, { params }: Params) {
     'INSERT INTO moim_comments (meeting_id, author_id, content) VALUES ($1, $2, $3) RETURNING id',
     [meetingId, session.userId, content.trim()]
   );
+
   const comment = await queryOne(
-    'SELECT c.*, u.display_name as author_name FROM moim_comments c JOIN moim_users u ON c.author_id = u.id WHERE c.id = $1',
+    `SELECT c.*,
+       COALESCE(gm.display_name, u.display_name, u.username) as author_name
+     FROM moim_comments c
+     JOIN moim_users u ON c.author_id = u.id
+     LEFT JOIN moim_meetings m ON m.id = c.meeting_id
+     LEFT JOIN moim_group_members gm ON gm.group_id = m.group_id AND gm.user_id = c.author_id
+     WHERE c.id = $1`,
     [rows[0].id]
   );
   return NextResponse.json({ data: comment }, { status: 201 });
@@ -49,6 +65,6 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   if (session.role !== 'admin' && comment.author_id !== session.userId) {
     return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 });
   }
-  await execute('UPDATE comments SET is_deleted = 1 WHERE id = $1', [commentId]);
+  await execute('UPDATE moim_comments SET is_deleted = 1 WHERE id = $1', [commentId]);
   return NextResponse.json({ data: { ok: true } });
 }

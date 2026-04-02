@@ -50,11 +50,14 @@ export async function initDb(): Promise<void> {
     );
 
     CREATE TABLE IF NOT EXISTS moim_group_members (
-      group_id   INTEGER NOT NULL REFERENCES moim_groups(id) ON DELETE CASCADE,
-      user_id    INTEGER NOT NULL REFERENCES moim_users(id) ON DELETE CASCADE,
-      joined_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      group_id     INTEGER NOT NULL REFERENCES moim_groups(id) ON DELETE CASCADE,
+      user_id      INTEGER NOT NULL REFERENCES moim_users(id) ON DELETE CASCADE,
+      display_name TEXT NOT NULL DEFAULT '',
+      joined_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       PRIMARY KEY (group_id, user_id)
     );
+
+    ALTER TABLE moim_group_members ADD COLUMN IF NOT EXISTS display_name TEXT NOT NULL DEFAULT '';
 
     CREATE TABLE IF NOT EXISTS moim_meetings (
       id           SERIAL PRIMARY KEY,

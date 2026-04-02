@@ -20,7 +20,6 @@ export default function NewMeetingPage() {
     meetingDate: new Date().toISOString().split('T')[0],
     location: '',
     description: '',
-    topics: '',
     members: [] as number[],
   });
   const [loading, setLoading] = useState(false);
@@ -46,11 +45,10 @@ export default function NewMeetingPage() {
     setError('');
     setLoading(true);
     try {
-      const topics = form.topics.split(',').map(t => t.trim()).filter(Boolean);
       const res = await fetch('/api/meetings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, topics, groupId: parseInt(groupId) }),
+        body: JSON.stringify({ ...form, topics: [], groupId: parseInt(groupId) }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -106,16 +104,6 @@ export default function NewMeetingPage() {
                   placeholder="예: 강남 OO식당"
                 />
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">주제 (쉼표로 구분)</label>
-              <input
-                type="text"
-                value={form.topics}
-                onChange={e => setForm(f => ({ ...f, topics: e.target.value }))}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
-                placeholder="예: 독서, 토론, 식사"
-              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">메모</label>
