@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: gujins
+    name: moim
     runtime: node
     buildCommand: rm -rf .next && npm ci && npm run build
     startCommand: npm run start
