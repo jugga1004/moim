@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -49,11 +49,20 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
   const [aiLoading, setAiLoading] = useState('');
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState('');
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [editingMeeting, setEditingMeeting] = useState(false);
   const [editForm, setEditForm] = useState({ title: '', meetingDate: '', location: '', description: '' });
   const [editSaving, setEditSaving] = useState(false);
   const [groupMembers, setGroupMembers] = useState<{ id: number; display_name: string }[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
+  const showToast = useCallback((msg: string) => {
+    setUploadError(msg);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setUploadError(''), 10000);
+  }, []);
+
+  useEffect(() => () => { if (toastTimerRef.current) clearTimeout(toastTimerRef.current); }, []);
+
   const photoInputRef = useRef<HTMLInputElement>(null);
   const receiptInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -83,7 +92,6 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
 
   async function handlePhotoUpload(files: FileList) {
     setUploading(true);
-    setUploadError('');
     const formData = new FormData();
     Array.from(files).forEach(f => formData.append('photos', f));
 
@@ -94,7 +102,7 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
       });
       if (!res.ok) {
         const d = await res.json();
-        setUploadError(d.error || '업로드 실패');
+        showToast(d.error || '업로드 실패');
         return;
       }
       await refreshData();
@@ -105,7 +113,6 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
 
   async function handleReceiptUpload(file: File) {
     setUploading(true);
-    setUploadError('');
     const formData = new FormData();
     formData.append('receipt', file);
 
@@ -116,7 +123,7 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
       });
       if (!res.ok) {
         const d = await res.json();
-        setUploadError(d.error || '업로드 실패');
+        showToast(d.error || '업로드 실패');
         return;
       }
       await refreshData();
@@ -127,7 +134,6 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
 
   async function handleAudioUpload(file: File) {
     setUploading(true);
-    setUploadError('');
     const formData = new FormData();
     formData.append('audio', file);
 
@@ -138,7 +144,7 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
       });
       if (!res.ok) {
         const d = await res.json();
-        setUploadError(d.error || '업로드 실패');
+        showToast(d.error || '업로드 실패');
         return;
       }
       await refreshData();
@@ -149,7 +155,6 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
 
   async function handleGenerateStory() {
     setAiLoading('story');
-    setUploadError('');
     try {
       const res = await fetch('/api/ai/generate-story', {
         method: 'POST',
@@ -160,10 +165,10 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
         await refreshData();
       } else {
         const d = await res.json();
-        setUploadError(`AI 오류: ${d.detail || d.error || '알 수 없는 오류'}`);
+        showToast(`AI 오류: ${d.detail || d.error || '알 수 없는 오류'}`);
       }
     } catch (e) {
-      setUploadError(`AI 오류: ${e instanceof Error ? e.message : '네트워크 오류'}`);
+      showToast(`AI 오류: ${e instanceof Error ? e.message : '네트워크 오류'}`);
     } finally {
       setAiLoading('');
     }
@@ -276,6 +281,7 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
   const totalCost = expenses.reduce((sum, item) => sum + (item.total_price as number), 0);
 
   return (
+    <>
     <div className="max-w-3xl mx-auto">
       {/* 헤더 */}
       <div className="flex items-start gap-3 mb-6">
@@ -417,10 +423,6 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
           );
         })}
       </div>
-
-      {uploadError && (
-        <div className="mb-4 bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">{uploadError}</div>
-      )}
 
       {/* 이야기 탭 */}
       {activeTab === 'story' && (
@@ -820,5 +822,19 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
         </div>
       )}
     </div>
+
+    {/* Toast 에러 알림 */}
+    {uploadError && (
+      <div className="fixed bottom-6 left-0 right-0 flex justify-center z-[9999] px-4 pointer-events-none">
+        <div className="bg-red-600 text-white text-sm px-4 py-3 rounded-xl shadow-xl flex items-start gap-3 max-w-sm w-full pointer-events-auto">
+          <span className="flex-1 leading-relaxed">{uploadError}</span>
+          <button
+            onClick={() => { setUploadError(''); if (toastTimerRef.current) clearTimeout(toastTimerRef.current); }}
+            className="text-white/80 hover:text-white text-xl leading-none flex-shrink-0 -mt-0.5"
+          >×</button>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
