@@ -540,6 +540,22 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
                               className="w-full h-full object-cover hover:scale-105 transition"
                               onClick={() => setLightboxPhoto(photo.file_path as string)}
                             />
+                            {/* 삭제 버튼 */}
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!confirm('사진을 삭제하시겠습니까?')) return;
+                                await fetch(`/api/meetings/${meeting.id}/photos`, {
+                                  method: 'DELETE',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ photoId: photo.id }),
+                                });
+                                await refreshData();
+                              }}
+                              className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition flex items-center justify-center hover:bg-red-500"
+                            >
+                              ✕
+                            </button>
                             {photo.exif_taken_at && (
                               <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 transition text-center">
                                 {(() => {
