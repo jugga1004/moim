@@ -68,6 +68,12 @@ export default function AdminDashboardClient({ stats, initialUsers, initialGroup
     window.location.reload();
   }
 
+  async function deleteUser(user: UserRow) {
+    if (!confirm(`"${user.username}" 계정을 삭제하시겠습니까?\n삭제된 계정은 다시 로그인할 수 없습니다.`)) return;
+    await fetch(`/api/users/${user.id}`, { method: 'DELETE' });
+    window.location.reload();
+  }
+
   async function toggleRole(user: UserRow) {
     const newRole = user.role === 'admin' ? 'member' : 'admin';
     if (!confirm(`"${user.username}" 권한을 ${newRole === 'admin' ? '관리자' : '일반'}으로 변경하시겠습니까?`)) return;
@@ -204,6 +210,12 @@ export default function AdminDashboardClient({ stats, initialUsers, initialGroup
                     className="text-xs px-3 py-1 rounded-full font-medium border border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition"
                   >
                     {u.role === 'admin' ? '관리자 해제' : '관리자'}
+                  </button>
+                  <button
+                    onClick={() => deleteUser(u)}
+                    className="text-xs px-3 py-1 rounded-full font-medium border border-red-100 text-red-400 hover:bg-red-50 hover:text-red-600 transition"
+                  >
+                    삭제
                   </button>
                 </div>
               </div>

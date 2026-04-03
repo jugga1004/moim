@@ -18,12 +18,19 @@ export async function POST(request: NextRequest) {
       [trimmed]
     );
 
-    // 없으면 자동 생성
+    // 없으면 자동 생성 (단, 비활성화된 계정은 차단)
     if (!user) {
+      const deactivated = await queryOne(
+        'SELECT id FROM moim_users WHERE username = $1 AND is_active = 0',
+        [trimmed]
+      );
+      if (deactivated) {
+        return NextResponse.json({ error: '사용할 수 없는 아이디입니다.' }, { status: 403 });
+      }
+
       user = await queryOne<{ id: number; username: string; display_name: string; role: string }>(
         `INSERT INTO moim_users (username, display_name, role)
          VALUES ($1, $1, 'member')
-         ON CONFLICT (username) DO UPDATE SET username = EXCLUDED.username
          RETURNING id, username, display_name, role`,
         [trimmed]
       );
