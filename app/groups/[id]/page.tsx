@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { getSession } from '@/lib/auth';
-import { query, queryOne, initDb } from '@/lib/db';
+import { query, queryOne, execute, initDb } from '@/lib/db';
 
 interface MemberRow { id: number; display_name: string; }
 import { redirect, notFound } from 'next/navigation';
@@ -40,6 +40,14 @@ export default async function GroupDetailPage({ params }: Params) {
     [groupId, session.userId]
   );
   if (!member) redirect('/groups');
+
+  // 방문 시각 업데이트 → 새 활동 배지 초기화
+  await execute(
+    `INSERT INTO moim_group_visits (group_id, user_id, last_visit)
+     VALUES ($1, $2, NOW())
+     ON CONFLICT (group_id, user_id) DO UPDATE SET last_visit = NOW()`,
+    [groupId, session.userId]
+  );
 
   const group = await queryOne<{ id: number; name: string; created_by: number }>(
     'SELECT id, name, created_by FROM moim_groups WHERE id = $1',
