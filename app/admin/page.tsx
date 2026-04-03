@@ -23,8 +23,19 @@ export default async function AdminPage() {
         (SELECT COUNT(*) FROM moim_photos)::int as photo_count
     `),
     query(`
-      SELECT id, username, display_name, role, created_at, is_active
-      FROM moim_users ORDER BY created_at DESC
+      SELECT u.id, u.username, u.role, u.created_at, u.is_active,
+        COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT('group_name', g.name, 'nickname', COALESCE(NULLIF(gm.display_name,''), '(미설정)'))
+            ORDER BY gm.joined_at ASC
+          ) FILTER (WHERE g.id IS NOT NULL),
+          '[]'
+        ) as memberships
+      FROM moim_users u
+      LEFT JOIN moim_group_members gm ON gm.user_id = u.id
+      LEFT JOIN moim_groups g ON g.id = gm.group_id
+      GROUP BY u.id, u.username, u.role, u.created_at, u.is_active
+      ORDER BY u.created_at DESC
     `),
     query(`
       SELECT g.id, g.name, g.created_at,

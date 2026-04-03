@@ -15,10 +15,10 @@ interface Stats {
 interface UserRow {
   id: number;
   username: string;
-  display_name: string;
   role: string;
   created_at: string;
   is_active: number;
+  memberships: { group_name: string; nickname: string }[];
 }
 
 interface GroupRow {
@@ -70,7 +70,7 @@ export default function AdminDashboardClient({ stats, initialUsers, initialGroup
 
   async function toggleRole(user: UserRow) {
     const newRole = user.role === 'admin' ? 'member' : 'admin';
-    if (!confirm(`"${user.display_name}" 권한을 ${newRole === 'admin' ? '관리자' : '일반'}으로 변경하시겠습니까?`)) return;
+    if (!confirm(`"${user.username}" 권한을 ${newRole === 'admin' ? '관리자' : '일반'}으로 변경하시겠습니까?`)) return;
     await fetch(`/api/users/${user.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -127,7 +127,15 @@ export default function AdminDashboardClient({ stats, initialUsers, initialGroup
             <div className="space-y-2">
               {users.slice(0, 5).map(u => (
                 <div key={u.id} className="flex items-center justify-between text-sm">
-                  <span className="text-gray-700">{u.display_name} <span className="text-gray-400">({u.username})</span></span>
+                  <div>
+                    <span className="text-gray-700 font-medium">{u.username}</span>
+                    <span className="text-xs text-gray-400 ml-2">로그인 ID</span>
+                    {u.memberships.length > 0 && (
+                      <span className="text-xs text-indigo-500 ml-2">
+                        닉네임: {u.memberships.map(m => m.nickname).join(', ')}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-gray-400 text-xs">{fmt(u.created_at)}</span>
                 </div>
               ))}
@@ -153,51 +161,54 @@ export default function AdminDashboardClient({ stats, initialUsers, initialGroup
 
       {/* 회원 */}
       {tab === 'users' && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50 text-left">
-                <th className="px-4 py-3 text-xs font-medium text-gray-500">이름</th>
-                <th className="px-4 py-3 text-xs font-medium text-gray-500">아이디</th>
-                <th className="px-4 py-3 text-xs font-medium text-gray-500">권한</th>
-                <th className="px-4 py-3 text-xs font-medium text-gray-500">가입일</th>
-                <th className="px-4 py-3 text-xs font-medium text-gray-500">상태</th>
-                <th className="px-4 py-3 text-xs font-medium text-gray-500">관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(u => (
-                <tr key={u.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-800">{u.display_name}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{u.username}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${u.role === 'admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'}`}>
+        <div className="space-y-3">
+          {users.map(u => (
+            <div key={u.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono text-sm font-semibold text-gray-800 bg-gray-100 px-2 py-0.5 rounded">
+                      {u.username}
+                    </span>
+                    <span className="text-xs text-gray-400">로그인 ID</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.role === 'admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-500'}`}>
                       {u.role === 'admin' ? '관리자' : '일반'}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-gray-400">{fmt(u.created_at)}</td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => toggleActive(u)}
-                      className={`text-xs px-3 py-1 rounded-full font-medium transition ${
-                        u.is_active ? 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-700' : 'bg-red-100 text-red-700 hover:bg-green-100 hover:text-green-700'
-                      }`}
-                    >
-                      {u.is_active ? '활성' : '비활성'}
-                    </button>
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => toggleRole(u)}
-                      className="text-xs px-3 py-1 rounded-full font-medium border border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition"
-                    >
-                      {u.role === 'admin' ? '관리자 해제' : '관리자 지정'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    <span className="text-xs text-gray-400">{fmt(u.created_at)} 가입</span>
+                  </div>
+                  {u.memberships.length > 0 ? (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {u.memberships.map((m, i) => (
+                        <div key={i} className="text-xs bg-indigo-50 rounded-lg px-2.5 py-1.5">
+                          <span className="text-gray-500">{m.group_name}</span>
+                          <span className="text-gray-300 mx-1">·</span>
+                          <span className="text-indigo-700 font-medium">{m.nickname}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-300 mt-1.5">참여 중인 모임 없음</p>
+                  )}
+                </div>
+                <div className="flex flex-col gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => toggleActive(u)}
+                    className={`text-xs px-3 py-1 rounded-full font-medium transition ${
+                      u.is_active ? 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-700' : 'bg-red-100 text-red-700 hover:bg-green-100 hover:text-green-700'
+                    }`}
+                  >
+                    {u.is_active ? '활성' : '비활성'}
+                  </button>
+                  <button
+                    onClick={() => toggleRole(u)}
+                    className="text-xs px-3 py-1 rounded-full font-medium border border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition"
+                  >
+                    {u.role === 'admin' ? '관리자 해제' : '관리자'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
