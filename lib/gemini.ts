@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const MODEL = 'gemini-1.5-flash';
+const MODEL = 'gemini-2.0-flash';
 
 // URL에서 파일을 Base64로 가져오기 (Cloudinary URL 지원)
 async function urlToBase64(url: string): Promise<{ data: string; mimeType: string }> {
