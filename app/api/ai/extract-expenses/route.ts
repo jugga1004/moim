@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
       'SELECT COALESCE(SUM(total_price), 0) as total FROM moim_expense_items WHERE meeting_id = $1',
       [receipt.meeting_id]
     );
-    await execute('UPDATE meetings SET total_cost = $1 WHERE id = $2', [parseInt(totalRow?.total || '0'), receipt.meeting_id]);
-    await execute('UPDATE receipts SET ai_raw_text = $1, processed = 1 WHERE id = $2', [result.rawText, receiptId]);
+    await execute('UPDATE moim_meetings SET total_cost = $1 WHERE id = $2', [parseInt(totalRow?.total || '0'), receipt.meeting_id]);
+    await execute('UPDATE moim_receipts SET ai_raw_text = $1, processed = 1 WHERE id = $2', [result.rawText, receiptId]);
 
     return NextResponse.json({ data: { items: result.items, grandTotal: result.grandTotal } });
   } catch {

@@ -19,11 +19,11 @@ export async function POST(request: NextRequest) {
   try {
     const result = await summarizeAudio(audio.file_path);
     await execute(
-      'UPDATE audio_files SET transcript=$1, summary=$2, topics_extracted=$3, processed=1 WHERE id=$4',
+      'UPDATE moim_audio_files SET transcript=$1, summary=$2, topics_extracted=$3, processed=1 WHERE id=$4',
       [result.transcript, result.summary, JSON.stringify(result.topics), audioId]
     );
     if (result.summary) {
-      await execute('UPDATE meetings SET ai_summary = $1 WHERE id = $2', [result.summary, audio.meeting_id]);
+      await execute('UPDATE moim_meetings SET ai_summary = $1 WHERE id = $2', [result.summary, audio.meeting_id]);
     }
     return NextResponse.json({ data: result });
   } catch {

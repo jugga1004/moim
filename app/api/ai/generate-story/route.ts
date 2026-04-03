@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       exifTimeline: photos.map(p => ({ takenAt: p.exif_taken_at, lat: p.exif_lat, lng: p.exif_lng })),
       description: meeting.description as string | undefined,
     });
-    await execute('UPDATE meetings SET ai_story = $1 WHERE id = $2', [story, meetingId]);
+    await execute('UPDATE moim_meetings SET ai_story = $1 WHERE id = $2', [story, meetingId]);
     return NextResponse.json({ data: { story } });
   } catch {
     return NextResponse.json({ error: 'AI 이야기 생성에 실패했습니다.' }, { status: 500 });
