@@ -37,6 +37,14 @@ export async function GET(request: NextRequest, { params }: Params) {
     [groupId, session.userId]
   );
 
+  // 방문 시각 업데이트 (알림 배지 초기화용)
+  await execute(
+    `INSERT INTO moim_group_visits (group_id, user_id, last_visit)
+     VALUES ($1, $2, NOW())
+     ON CONFLICT (group_id, user_id) DO UPDATE SET last_visit = NOW()`,
+    [groupId, session.userId]
+  );
+
   return NextResponse.json({ data: { ...group, members, myDisplayName: myMembership?.display_name ?? '' } });
 }
 

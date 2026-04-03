@@ -147,5 +147,12 @@ export async function initDb(): Promise<void> {
       user_id    INTEGER NOT NULL REFERENCES moim_users(id),
       PRIMARY KEY (meeting_id, user_id)
     );
+
+    CREATE TABLE IF NOT EXISTS moim_group_visits (
+      group_id   INTEGER NOT NULL REFERENCES moim_groups(id) ON DELETE CASCADE,
+      user_id    INTEGER NOT NULL REFERENCES moim_users(id) ON DELETE CASCADE,
+      last_visit TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (group_id, user_id)
+    );
   `);
 }
