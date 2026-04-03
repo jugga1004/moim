@@ -32,7 +32,7 @@ export default async function GroupsPage() {
            SELECT c.created_at AS ts
            FROM moim_comments c
            JOIN moim_meetings m ON c.meeting_id = m.id
-           WHERE m.group_id = g.id AND c.user_id != $1
+           WHERE m.group_id = g.id AND c.author_id != $1
            UNION ALL
            SELECT p.uploaded_at AS ts
            FROM moim_photos p
@@ -43,7 +43,7 @@ export default async function GroupsPage() {
        (
          SELECT COUNT(*) FROM moim_comments c
          JOIN moim_meetings m ON c.meeting_id = m.id
-         WHERE m.group_id = g.id AND c.user_id != $1
+         WHERE m.group_id = g.id AND c.author_id != $1
            AND c.created_at > COALESCE(
              (SELECT last_visit FROM moim_group_visits WHERE group_id = g.id AND user_id = $1),
              '2000-01-01'
