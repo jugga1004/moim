@@ -149,13 +149,21 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
 
   async function handleGenerateStory() {
     setAiLoading('story');
+    setUploadError('');
     try {
       const res = await fetch('/api/ai/generate-story', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ meetingId: meeting.id }),
       });
-      if (res.ok) await refreshData();
+      if (res.ok) {
+        await refreshData();
+      } else {
+        const d = await res.json();
+        setUploadError(`AI 오류: ${d.detail || d.error || '알 수 없는 오류'}`);
+      }
+    } catch (e) {
+      setUploadError(`AI 오류: ${e instanceof Error ? e.message : '네트워크 오류'}`);
     } finally {
       setAiLoading('');
     }
