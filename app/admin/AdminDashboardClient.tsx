@@ -68,6 +68,17 @@ export default function AdminDashboardClient({ stats, initialUsers, initialGroup
     window.location.reload();
   }
 
+  async function toggleRole(user: UserRow) {
+    const newRole = user.role === 'admin' ? 'member' : 'admin';
+    if (!confirm(`"${user.display_name}" 권한을 ${newRole === 'admin' ? '관리자' : '일반'}으로 변경하시겠습니까?`)) return;
+    await fetch(`/api/users/${user.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: newRole }),
+    });
+    window.location.reload();
+  }
+
   const tabs = [
     { key: 'overview', label: '개요' },
     { key: 'users', label: `회원 (${stats.user_count})` },
@@ -151,6 +162,7 @@ export default function AdminDashboardClient({ stats, initialUsers, initialGroup
                 <th className="px-4 py-3 text-xs font-medium text-gray-500">권한</th>
                 <th className="px-4 py-3 text-xs font-medium text-gray-500">가입일</th>
                 <th className="px-4 py-3 text-xs font-medium text-gray-500">상태</th>
+                <th className="px-4 py-3 text-xs font-medium text-gray-500">관리</th>
               </tr>
             </thead>
             <tbody>
@@ -172,6 +184,14 @@ export default function AdminDashboardClient({ stats, initialUsers, initialGroup
                       }`}
                     >
                       {u.is_active ? '활성' : '비활성'}
+                    </button>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => toggleRole(u)}
+                      className="text-xs px-3 py-1 rounded-full font-medium border border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-600 transition"
+                    >
+                      {u.role === 'admin' ? '관리자 해제' : '관리자 지정'}
                     </button>
                   </td>
                 </tr>

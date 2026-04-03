@@ -12,6 +12,7 @@ interface GroupDetailClientProps {
 
 export default function GroupDetailClient({ groupId, groupName, myDisplayName, members, isOwner }: GroupDetailClientProps) {
   const [editing, setEditing] = useState(false);
+  const [currentName, setCurrentName] = useState(myDisplayName);
   const [nickname, setNickname] = useState(myDisplayName);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -30,6 +31,7 @@ export default function GroupDetailClient({ groupId, groupName, myDisplayName, m
       });
       const d = await res.json();
       if (!res.ok) { setError(d.error); return; }
+      setCurrentName(nickname.trim());
       setEditing(false);
     } finally {
       setSaving(false);
@@ -62,20 +64,20 @@ export default function GroupDetailClient({ groupId, groupName, myDisplayName, m
               </button>
               <button
                 type="button"
-                onClick={() => { setEditing(false); setNickname(myDisplayName); setError(''); }}
+                onClick={() => { setEditing(false); setNickname(currentName); setError(''); }}
                 className="text-sm text-gray-400 hover:text-gray-600 px-2 py-1.5"
               >
                 취소
               </button>
             </form>
           ) : (
-            <p className="font-semibold text-indigo-700 text-base mt-0.5">{myDisplayName || '(이름 없음)'}</p>
+            <p className="font-semibold text-indigo-700 text-base mt-0.5">{currentName || '(이름 없음)'}</p>
           )}
           {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
         </div>
         {!editing && (
           <button
-            onClick={() => setEditing(true)}
+            onClick={() => { setNickname(currentName); setEditing(true); }}
             className="text-xs text-indigo-500 hover:text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg transition"
           >
             이름 변경

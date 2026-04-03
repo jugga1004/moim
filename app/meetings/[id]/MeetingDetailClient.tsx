@@ -52,6 +52,8 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
   const [editingMeeting, setEditingMeeting] = useState(false);
   const [editForm, setEditForm] = useState({ title: '', meetingDate: '', location: '', description: '' });
   const [editSaving, setEditSaving] = useState(false);
+  const [groupMembers, setGroupMembers] = useState<{ id: number; display_name: string }[]>([]);
+  const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const receiptInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -187,7 +189,7 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
     }
   }
 
-  function openEditMeeting() {
+  async function openEditMeeting() {
     const dateStr = meeting.meeting_date
       ? new Date(meeting.meeting_date as string).toISOString().slice(0, 10)
       : '';
@@ -197,6 +199,13 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
       location: (meeting.location as string) ?? '',
       description: (meeting.description as string) ?? '',
     });
+    setSelectedMembers(members.map(m => m.id));
+    // 모임방 멤버 불러오기
+    if (groupId) {
+      const res = await fetch(`/api/groups/${groupId}`);
+      const d = await res.json();
+      if (d.data?.members) setGroupMembers(d.data.members);
+    }
     setEditingMeeting(true);
   }
 
@@ -213,6 +222,7 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
           location: editForm.location,
           description: editForm.description,
           topics: topics,
+          members: selectedMembers,
         }),
       });
       if (res.ok) {
@@ -222,6 +232,12 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
     } finally {
       setEditSaving(false);
     }
+  }
+
+  function toggleMember(userId: number) {
+    setSelectedMembers(prev =>
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    );
   }
 
   async function handleComment(e: React.FormEvent) {
@@ -301,6 +317,27 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
                   placeholder="선택사항"
                 />
               </div>
+              {groupMembers.length > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-2">참석자</label>
+                  <div className="flex flex-wrap gap-2">
+                    {groupMembers.map(m => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => toggleMember(m.id)}
+                        className={`text-sm px-3 py-1.5 rounded-full border transition ${
+                          selectedMembers.includes(m.id)
+                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                        }`}
+                      >
+                        {m.display_name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="flex gap-2 pt-1">
                 <button
                   type="button"
