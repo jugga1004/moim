@@ -25,7 +25,7 @@ export default async function MeetingDetailPage({ params }: Params) {
   if (!meeting) notFound();
 
   const [photos, expenses, receipts, audioFiles, comments, members] = await Promise.all([
-    query('SELECT * FROM moim_photos WHERE meeting_id = $1 ORDER BY COALESCE(exif_taken_at, uploaded_at::text) ASC, sort_order ASC', [meetingId]),
+    query('SELECT * FROM moim_photos WHERE meeting_id = $1 ORDER BY COALESCE(exif_taken_at, uploaded_at::text) DESC, sort_order DESC', [meetingId]),
     query('SELECT * FROM moim_expense_items WHERE meeting_id = $1 ORDER BY created_at ASC', [meetingId]),
     query('SELECT * FROM moim_receipts WHERE meeting_id = $1 ORDER BY uploaded_at ASC', [meetingId]),
     query('SELECT * FROM moim_audio_files WHERE meeting_id = $1 ORDER BY uploaded_at ASC', [meetingId]),

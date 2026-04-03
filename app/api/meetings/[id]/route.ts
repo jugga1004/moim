@@ -23,7 +23,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   if (!meeting) return NextResponse.json({ error: '모임을 찾을 수 없습니다.' }, { status: 404 });
 
   const [photos, expenses, receipts, audioFiles, comments, members] = await Promise.all([
-    query('SELECT * FROM moim_photos WHERE meeting_id = $1 ORDER BY COALESCE(exif_taken_at, uploaded_at::text) ASC, sort_order ASC', [meetingId]),
+    query('SELECT * FROM moim_photos WHERE meeting_id = $1 ORDER BY COALESCE(exif_taken_at, uploaded_at::text) DESC, sort_order DESC', [meetingId]),
     query('SELECT * FROM moim_expense_items WHERE meeting_id = $1 ORDER BY created_at ASC', [meetingId]),
     query('SELECT * FROM moim_receipts WHERE meeting_id = $1 ORDER BY uploaded_at ASC', [meetingId]),
     query('SELECT * FROM moim_audio_files WHERE meeting_id = $1 ORDER BY uploaded_at ASC', [meetingId]),
