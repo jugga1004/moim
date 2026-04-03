@@ -467,7 +467,7 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
         <div className="space-y-4">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-gray-800">사진</h2>
+              <h2 className="font-semibold text-gray-800">사진 <span className="text-sm font-normal text-gray-400">{photos.length}장</span></h2>
               <button
                 onClick={() => photoInputRef.current?.click()}
                 disabled={uploading}
@@ -495,31 +495,68 @@ export default function MeetingDetailClient({ initialData, session }: MeetingDet
                   <p className="text-sm">클릭하여 사진을 추가하세요</p>
                 </div>
               </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {photos.map(photo => (
-                  <div key={photo.id as number} className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group">
-                    <img
-                      src={photo.file_path as string}
-                      alt={photo.original_name as string}
-                      className="w-full h-full object-cover hover:scale-105 transition"
-                      onClick={() => setLightboxPhoto(photo.file_path as string)}
-                    />
-                    {photo.exif_taken_at && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 opacity-0 group-hover:opacity-100 transition">
-                        {(() => {
-                          try {
-                            return format(new Date(photo.exif_taken_at as string), 'HH:mm');
-                          } catch {
-                            return '';
-                          }
-                        })()}
+            ) : (() => {
+              // 날짜별 그룹핑
+              type PhotoGroup = { dateLabel: string; photos: typeof photos };
+              const groups: PhotoGroup[] = [];
+              const dateMap = new Map<string, typeof photos>();
+
+              for (const photo of photos) {
+                let dateKey = 'no-exif';
+                let dateLabel = '촬영일 미상';
+                if (photo.exif_taken_at) {
+                  try {
+                    const d = new Date(photo.exif_taken_at as string);
+                    dateKey = format(d, 'yyyy-MM-dd');
+                    dateLabel = format(d, 'yyyy년 M월 d일 (E)', { locale: ko });
+                  } catch { /* ignore */ }
+                }
+                if (!dateMap.has(dateKey)) {
+                  dateMap.set(dateKey, []);
+                  groups.push({ dateLabel, photos: dateMap.get(dateKey)! });
+                }
+                dateMap.get(dateKey)!.push(photo);
+              }
+
+              const multipledays = groups.length > 1;
+
+              return (
+                <div className="space-y-5">
+                  {groups.map((group, gi) => (
+                    <div key={gi}>
+                      {multipledays && (
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="h-px flex-1 bg-gray-100" />
+                          <span className="text-xs font-medium text-gray-400 whitespace-nowrap">📅 {group.dateLabel}</span>
+                          <div className="h-px flex-1 bg-gray-100" />
+                        </div>
+                      )}
+                      <div className="grid grid-cols-3 gap-2">
+                        {group.photos.map(photo => (
+                          <div key={photo.id as number} className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group">
+                            <img
+                              src={photo.file_path as string}
+                              alt={photo.original_name as string}
+                              className="w-full h-full object-cover hover:scale-105 transition"
+                              onClick={() => setLightboxPhoto(photo.file_path as string)}
+                            />
+                            {photo.exif_taken_at && (
+                              <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 transition text-center">
+                                {(() => {
+                                  try {
+                                    return format(new Date(photo.exif_taken_at as string), multipledays ? 'M/d HH:mm' : 'HH:mm');
+                                  } catch { return ''; }
+                                })()}
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
